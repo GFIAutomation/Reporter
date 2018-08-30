@@ -1,0 +1,9 @@
+C:\temp\reporter\reporter\bin\Debug\reporter.exe.config
+C:\temp\reporter\reporter\bin\Debug\reporter.exe
+C:\temp\reporter\reporter\bin\Debug\reporter.pdb
+C:\temp\reporter\reporter\obj\Debug\reporter.csprojAssemblyReference.cache
+C:\temp\reporter\reporter\obj\Debug\reporter.csproj.CoreCompileInputs.cache
+C:\temp\reporter\reporter\obj\Debug\reporter.exe
+C:\temp\reporter\reporter\obj\Debug\reporter.pdb
+C:\temp\reporter\reporter\bin\Debug\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll
+C:\temp\reporter\reporter\obj\Debug\reporter.csproj.CopyComplete
