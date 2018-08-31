@@ -21,11 +21,13 @@ namespace reporter
 
         const int project_id    = 2;
         static int report_id    = 0;
+        static bool report_started = false;
+        static bool end_the_build = false;
 
         static void Main(string[] args)
         {
             // Add tests
-            String[] tests = { @"C:\temp\UnitTestProject1\UnitTestProject1\bin\Debug\UnitTestProject1.dll" };
+            String[] tests = { @"C:\Users\claudio.costa\Documents\Reporter\UnitTestProject1\UnitTestProject1\bin\Debug\UnitTestProject1.dll" };
             TextWriterTraceListener myListener = new TextWriterTraceListener("Buildlog.txt", "myListener");
             bool test_started = false;
 
@@ -39,44 +41,68 @@ namespace reporter
                 process.StartInfo.RedirectStandardOutput = true;
                 process.StartInfo.RedirectStandardError = true;
                 process.Start();
-                build_date_start = DateTime.Now;
-                InitializeReport(build_date_start);
-                SelectReportId();
-                while (!process.StandardOutput.EndOfStream || !process.StandardError.EndOfStream)
+                while (!end_the_build)
                 {
-                    if (!test_started)
+                    string err = process.StandardError.ReadLine();
+                    if (!err.Contains("provided was not found.") && !err.Contains("The test source file") && !report_started)
                     {
-                        test_date_start = DateTime.Now;
-                        test_started = true;
+                        Console.WriteLine("Build started");
+                        build_date_start = DateTime.Now;
+                        InitializeReport(build_date_start);
+                        SelectReportId();
+                        report_started = true;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Build failed");
+                        Environment.Exit(0);
                     }
 
-                    string output = process.StandardOutput.ReadLine();
-                    string err = process.StandardError.ReadLine();
-                    if (output.Contains("Passed ") || output.Contains("Failed "))
+                    while (!process.StandardOutput.EndOfStream || !process.StandardError.EndOfStream)
                     {
-                        test_status = output.Remove(6);
-                        test_name = output.Remove(1, 5);
-                        build_status = "Passed";
-                        InsertReportCollectionsRow(project_id, report_id, test_date_start, DateTime.Now, test_status, "Passed with success", test_name, "Tester");
-                        test_started = false;
+                        Console.WriteLine("Reading line");
+                        string output = process.StandardOutput.ReadLine();
+                        string error = process.StandardError.ReadLine();
+
+                        if (!test_started && report_started)
+                        {
+                            Console.WriteLine("Test started");
+                            test_date_start = DateTime.Now;
+                            test_started = true;
+                        }
+
+                        if (output.Contains("Passed "))
+                        {
+                            test_status = output.Remove(6);
+                            test_name = output.Remove(1, 6);
+                            if (build_status != "Failed")
+                                build_status = "Passed";
+                            InsertReportCollectionsRow(project_id, report_id, test_date_start, DateTime.Now, test_status, "Passed with success", test_name, "Tester");
+                            test_started = false;
+                            Console.WriteLine("Test passed and closed");
+                        }
+                        else if (output.Contains("Failed "))
+                        {
+                            test_status = output.Remove(6);
+                            test_name = output.Remove(1, 6);
+                            build_status = "Failed";
+                            InsertReportCollectionsRow(project_id, report_id, test_date_start, DateTime.Now, test_status, "Unsuccessfully ran.", test_name, "Tester");
+                            test_started = false;
+                            Console.WriteLine("Test failed and closed");
+                        }
+                        if (output.Contains("Test execution time "))
+                            build_execution_time = output;
+                        if (output.Contains("Passed: "))
+                            general_message = output;
+
+                        Console.WriteLine("Waiting");
                     }
-                    else if (output.Contains("Failed "))
-                    {
-                        test_status = output.Remove(6);
-                        test_name = output.Remove(1, 5);
-                        build_status = "Failed";
-                        InsertReportCollectionsRow(project_id, report_id, test_date_start, DateTime.Now, test_status, "Unsuccessfully ran.", test_name, "Tester");
-                        test_started = false;
-                    }
-                    if (output.Contains("Test execution time "))
-                        build_execution_time = output;
-                    if (output.Contains("Passed: "))
-                        general_message = output;
+                    process.WaitForExit();
+                    myListener.Flush();
+                    build_date_end = DateTime.Now;
+                    UpdateReport();
+                    end_the_build = true;
                 }
-                process.WaitForExit();
-                myListener.Flush();
-                build_date_end = DateTime.Now;
-                UpdateReport();
             }
         }
 

@@ -67,20 +67,19 @@ namespace UnitTestProject1
             IWebDriver mydriver = new FirefoxDriver();
             try
             {
+                //mydriver.Navigate().GoToUrl("http://google.com");
+                
+                // Comment to pass the test
                 mydriver.Navigate().GoToUrl("http://.com");
-                Assert.Fail();
+
+                if (mydriver.FindElement(By.XPath("//*[@id=\"hplogo\"]")).Displayed)
                 mydriver.Quit();
-                mydriver.Close();
-                mydriver.Dispose();
             }
             catch (WebDriverException web)
             {
                 Console.WriteLine(web.ToString());
-                foreach (var process in Process.GetProcessesByName("firefox.exe"))
-                {
-                    process.Kill();
-                }
                 mydriver.Quit();
+                Assert.Fail();
             };
         }
     }
